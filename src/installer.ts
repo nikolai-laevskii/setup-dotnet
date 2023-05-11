@@ -111,20 +111,16 @@ export class DotnetVersionResolver {
 
 class InstallDir {
   static base = {
-    windows: path.join(
-      process.env['PROGRAMFILES'] + '',
-      'dotnet'
-    ),
-    mac: path.join(
-      process.env['HOME'] + '',
-      '.dotnet'
-    ),
+    windows: path.join(process.env['PROGRAMFILES'] + '', 'dotnet'),
+    mac: path.join(process.env['HOME'] + '', '.dotnet'),
     linux: '/usr/share/dotnet'
-  }
+  };
 
   constructor(version = 'unspecified-version') {
     if (IS_WINDOWS) {
-      process.env['DOTNET_INSTALL_DIR'] = `${InstallDir.base.windows}\\${version}`;
+      process.env[
+        'DOTNET_INSTALL_DIR'
+      ] = `${InstallDir.base.windows}\\${version}`;
       return;
     }
 
@@ -133,18 +129,18 @@ class InstallDir {
       return;
     }
 
-    process.env['DOTNET_INSTALL_DIR'] = `${InstallDir.base.mac}/${version}`
+    process.env['DOTNET_INSTALL_DIR'] = `${InstallDir.base.mac}/${version}`;
     return;
   }
 
   get path() {
     if (process.env['DOTNET_INSTALL_DIR']) {
-      return process.env['DOTNET_INSTALL_DIR']
+      return process.env['DOTNET_INSTALL_DIR'];
     }
 
-    if (IS_WINDOWS) return InstallDir.base.windows
-    if (IS_LINUX) return InstallDir.base.linux
-    return InstallDir.base.mac
+    if (IS_WINDOWS) return InstallDir.base.windows;
+    if (IS_LINUX) return InstallDir.base.linux;
+    return InstallDir.base.mac;
   }
 }
 
