@@ -365,6 +365,7 @@ class DotnetCoreInstaller {
             const dotnetVersion = yield versionResolver.createDotNetVersion();
             if (utils_1.IS_WINDOWS) {
                 scriptArguments = ['&', `'${escapedScript}'`];
+                scriptArguments.push('-SkipNonVersionedFiles');
                 if (dotnetVersion.type) {
                     scriptArguments.push(dotnetVersion.type, dotnetVersion.value);
                 }
