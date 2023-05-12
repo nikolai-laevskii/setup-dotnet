@@ -121,7 +121,7 @@ export class DotnetInstallScript {
     this.escapedScript = path
       .join(__dirname, '..', 'externals', this.scriptName)
       .replace(/'/g, "''");
-    
+
     this.scriptReady = IS_WINDOWS
       ? this.setupScriptPowershell()
       : this.setupScriptBash();
@@ -148,7 +148,8 @@ export class DotnetInstallScript {
       this.scriptArguments.push(`-ProxyBypassList ${process.env['no_proxy']}`);
     }
 
-    this.scriptPath = (await io.which('pwsh', false)) || (await io.which('powershell', true));
+    this.scriptPath =
+      (await io.which('pwsh', false)) || (await io.which('powershell', true));
   }
 
   private async setupScriptBash() {
@@ -194,8 +195,8 @@ export class DotnetInstallScript {
     return exec.getExecOutput(
       `"${this.scriptPath}"`,
       this.scriptArguments,
-      getExecOutputOptions,
-    )
+      getExecOutputOptions
+    );
   }
 }
 
@@ -204,11 +205,13 @@ export abstract class DotnetInstallDir {
     linux: '/usr/share/dotnet',
     mac: path.join(process.env['HOME'] + '', '.dotnet'),
     windows: path.join(process.env['PROGRAMFILES'] + '', 'dotnet')
-  }
+  };
 
   public static readonly path = process.env['DOTNET_INSTALL_DIR']
-    ? DotnetInstallDir.convertInstallPathToAbsolute(process.env['DOTNET_INSTALL_DIR'])
-    : DotnetInstallDir.default[getPlatform()]
+    ? DotnetInstallDir.convertInstallPathToAbsolute(
+        process.env['DOTNET_INSTALL_DIR']
+      )
+    : DotnetInstallDir.default[getPlatform()];
 
   private static convertInstallPathToAbsolute(installDir: string): string {
     let transformedPath;
@@ -239,21 +242,55 @@ export class DotnetCoreInstaller {
     DotnetInstallDir.initialize;
   }
 
-  constructor(private version: string, private quality: QualityOptions) {};
+  constructor(private version: string, private quality: QualityOptions) {}
 
   public async installDotnet(): Promise<string> {
     const versionResolver = new DotnetVersionResolver(this.version);
     const dotnetVersion = await versionResolver.createDotnetVersion();
 
-    const installScript = new DotnetInstallScript()
-      .useArguments(IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files')
+    /**
+     * Install dotnet runitme first in order to get
+     * the latest stable version of dotnet CLI
+     */
+    const runtimeInstallScript = new DotnetInstallScript()
+      // If dotnet CLI is already installed - avoid overwriting it
+      .useArguments(
+        IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files'
+      )
+      // Install only runtime + CLI
+      .useArguments(IS_WINDOWS ? '-Runtime' : '--runtime', 'dotnet')
+      // Use latest stable version
+      .useArguments(IS_WINDOWS ? '-Channel' : '--channel', 'LTS');
+
+    const runtimeInstall = await runtimeInstallScript.execute();
+
+    if (runtimeInstall.exitCode) {
+      /**
+       * dotnetInstallScript will install CLI and runtime if previous script haven't succeded,
+       * so at this point it's too early to throw an error
+       */
+      core.warning(
+        `Failed to install dotnet runtime + cli, exit code: ${runtimeInstall.exitCode}. ${runtimeInstall.stderr}`
+      );
+    }
+
+    /**
+     * Install dotnet over the latest version of
+     * dotnet CLI
+     */
+    const dotnetInstallScript = new DotnetInstallScript()
+      // Don't overwrite CLI because it should be already installed
+      .useArguments(
+        IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files'
+      )
+      // Use version provided by user
       .useVersion(dotnetVersion, this.quality);
 
-    const {exitCode, stderr} = await installScript.execute();
+    const dotnetInstall = await dotnetInstallScript.execute();
 
-    if (exitCode) {
+    if (dotnetInstall.exitCode) {
       throw new Error(
-        `Failed to install dotnet, exit code: ${exitCode}. ${stderr}`
+        `Failed to install dotnet, exit code: ${dotnetInstall.exitCode}. ${dotnetInstall.stderr}`
       );
     }
 

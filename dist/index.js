@@ -344,7 +344,8 @@ class DotnetInstallScript {
             if (process.env['no_proxy'] != null) {
                 this.scriptArguments.push(`-ProxyBypassList ${process.env['no_proxy']}`);
             }
-            this.scriptPath = (yield io.which('pwsh', false)) || (yield io.which('powershell', true));
+            this.scriptPath =
+                (yield io.which('pwsh', false)) || (yield io.which('powershell', true));
         });
     }
     setupScriptBash() {
@@ -418,17 +419,41 @@ class DotnetCoreInstaller {
         this.version = version;
         this.quality = quality;
     }
-    ;
     installDotnet() {
         return __awaiter(this, void 0, void 0, function* () {
             const versionResolver = new DotnetVersionResolver(this.version);
             const dotnetVersion = yield versionResolver.createDotnetVersion();
-            const installScript = new DotnetInstallScript()
+            /**
+             * Install dotnet runitme first in order to get
+             * the latest stable version of dotnet CLI
+             */
+            const runtimeInstallScript = new DotnetInstallScript()
+                // If dotnet CLI is already installed - avoid overwriting it
                 .useArguments(utils_1.IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files')
+                // Install only runtime + CLI
+                .useArguments(utils_1.IS_WINDOWS ? '-Runtime' : '--runtime', 'dotnet')
+                // Use latest stable version
+                .useArguments(utils_1.IS_WINDOWS ? '-Channel' : '--channel', 'LTS');
+            const runtimeInstall = yield runtimeInstallScript.execute();
+            if (runtimeInstall.exitCode) {
+                /**
+                 * dotnetInstallScript will install CLI and runtime if previous script haven't succeded,
+                 * so at this point it's too early to throw an error
+                 */
+                core.warning(`Failed to install dotnet runtime + cli, exit code: ${runtimeInstall.exitCode}. ${runtimeInstall.stderr}`);
+            }
+            /**
+             * Install dotnet over the latest version of
+             * dotnet CLI
+             */
+            const dotnetInstallScript = new DotnetInstallScript()
+                // Don't overwrite CLI because it should be already installed
+                .useArguments(utils_1.IS_WINDOWS ? '-SkipNonVersionedFiles' : '--skip-non-versioned-files')
+                // Use version provided by user
                 .useVersion(dotnetVersion, this.quality);
-            const { exitCode, stderr } = yield installScript.execute();
-            if (exitCode) {
-                throw new Error(`Failed to install dotnet, exit code: ${exitCode}. ${stderr}`);
+            const dotnetInstall = yield dotnetInstallScript.execute();
+            if (dotnetInstall.exitCode) {
+                throw new Error(`Failed to install dotnet, exit code: ${dotnetInstall.exitCode}. ${dotnetInstall.stderr}`);
             }
             return this.outputDotnetVersion(dotnetVersion.value);
         });
