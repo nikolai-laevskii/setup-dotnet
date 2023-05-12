@@ -133,9 +133,7 @@ class InstallDir {
       return;
     }
 
-    process.env[
-      'DOTNET_INSTALL_DIR'
-    ] = `${InstallDir.base.mac}${majorVersion}`;
+    process.env['DOTNET_INSTALL_DIR'] = `${InstallDir.base.mac}${majorVersion}`;
   }
 
   get path() {
