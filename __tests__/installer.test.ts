@@ -21,7 +21,8 @@ if (IS_WINDOWS) {
 }
 const tempDir = path.join(__dirname, 'runner', 'temp');
 
-const getVersionedToolDir = (version: string) => path.join(toolDir + '', version);
+const getVersionedToolDir = (version: string) =>
+  path.join(toolDir + '', version);
 
 process.env['RUNNER_TOOL_CACHE'] = toolDir;
 process.env['RUNNER_TEMP'] = tempDir;
@@ -61,13 +62,21 @@ describe('DotnetCoreInstaller tests', () => {
     for (const version of versions) {
       await getDotnet(version);
     }
-    expect(fs.existsSync(path.join(getVersionedToolDir('2'), 'sdk', '2.2.207'))).toBe(true);
-    expect(fs.existsSync(path.join(getVersionedToolDir('3'), 'sdk', '3.1.120'))).toBe(true);
+    expect(
+      fs.existsSync(path.join(getVersionedToolDir('2'), 'sdk', '2.2.207'))
+    ).toBe(true);
+    expect(
+      fs.existsSync(path.join(getVersionedToolDir('3'), 'sdk', '3.1.120'))
+    ).toBe(true);
 
     if (IS_WINDOWS) {
-      expect(fs.existsSync(path.join(getVersionedToolDir('3'), 'dotnet.exe'))).toBe(true);
+      expect(
+        fs.existsSync(path.join(getVersionedToolDir('3'), 'dotnet.exe'))
+      ).toBe(true);
     } else {
-      expect(fs.existsSync(path.join(getVersionedToolDir('3'), 'dotnet'))).toBe(true);
+      expect(fs.existsSync(path.join(getVersionedToolDir('3'), 'dotnet'))).toBe(
+        true
+      );
     }
 
     expect(process.env.DOTNET_ROOT).toBeDefined();
@@ -78,11 +87,17 @@ describe('DotnetCoreInstaller tests', () => {
 
   it('Acquires version of dotnet if no matching version is installed', async () => {
     await getDotnet('3.1.201');
-    expect(fs.existsSync(path.join(getVersionedToolDir('3'), 'sdk', '3.1.201'))).toBe(true);
+    expect(
+      fs.existsSync(path.join(getVersionedToolDir('3'), 'sdk', '3.1.201'))
+    ).toBe(true);
     if (IS_WINDOWS) {
-      expect(fs.existsSync(path.join(getVersionedToolDir('3'), 'dotnet.exe'))).toBe(true);
+      expect(
+        fs.existsSync(path.join(getVersionedToolDir('3'), 'dotnet.exe'))
+      ).toBe(true);
     } else {
-      expect(fs.existsSync(path.join(getVersionedToolDir('3'), 'dotnet'))).toBe(true);
+      expect(fs.existsSync(path.join(getVersionedToolDir('3'), 'dotnet'))).toBe(
+        true
+      );
     }
 
     expect(process.env.DOTNET_ROOT).toBeDefined();
@@ -98,9 +113,13 @@ describe('DotnetCoreInstaller tests', () => {
       .filter(fn => fn.startsWith('3.1.'));
     expect(directory.length > 0).toBe(true);
     if (IS_WINDOWS) {
-      expect(fs.existsSync(path.join(getVersionedToolDir('3'), 'dotnet.exe'))).toBe(true);
+      expect(
+        fs.existsSync(path.join(getVersionedToolDir('3'), 'dotnet.exe'))
+      ).toBe(true);
     } else {
-      expect(fs.existsSync(path.join(getVersionedToolDir('3'), 'dotnet'))).toBe(true);
+      expect(fs.existsSync(path.join(getVersionedToolDir('3'), 'dotnet'))).toBe(
+        true
+      );
     }
 
     expect(process.env.DOTNET_ROOT).toBeDefined();
