@@ -313,16 +313,17 @@ class DotnetVersionResolver {
 exports.DotnetVersionResolver = DotnetVersionResolver;
 DotnetVersionResolver.DotNetCoreIndexUrl = 'https://dotnetcli.azureedge.net/dotnet/release-metadata/releases-index.json';
 class InstallDir {
-    constructor(version = 'unspecified-version') {
+    constructor(version) {
+        const majorVersion = version.split('.').at(0);
         if (utils_1.IS_WINDOWS) {
-            process.env['DOTNET_INSTALL_DIR'] = `${InstallDir.base.windows}\\${version}`;
+            process.env['DOTNET_INSTALL_DIR'] = `${InstallDir.base.windows}\\${majorVersion}`;
             return;
         }
         if (utils_1.IS_LINUX) {
-            process.env['DOTNET_INSTALL_DIR'] = `${InstallDir.base.linux}/${version}`;
+            process.env['DOTNET_INSTALL_DIR'] = `${InstallDir.base.linux}/${majorVersion}`;
             return;
         }
-        process.env['DOTNET_INSTALL_DIR'] = `${InstallDir.base.mac}/${version}`;
+        process.env['DOTNET_INSTALL_DIR'] = `${InstallDir.base.mac}/${majorVersion}`;
         return;
     }
     get path() {
@@ -380,7 +381,7 @@ class DotnetCoreInstaller {
             const versionResolver = new DotnetVersionResolver(this.version);
             const dotnetVersion = yield versionResolver.createDotNetVersion();
             if (utils_1.IS_WINDOWS) {
-                scriptArguments = ['&', `'${escapedScript}'`];
+                scriptArguments = ['&', '-SkipNonVersionedFiles', `'${escapedScript}'`];
                 if (dotnetVersion.type) {
                     scriptArguments.push(dotnetVersion.type, dotnetVersion.value);
                 }
@@ -401,7 +402,7 @@ class DotnetCoreInstaller {
             else {
                 (0, fs_1.chmodSync)(escapedScript, '777');
                 scriptPath = yield io.which(escapedScript, true);
-                scriptArguments = [];
+                scriptArguments = ['--skip-non-versioned-files'];
                 if (dotnetVersion.type) {
                     scriptArguments.push(dotnetVersion.type, dotnetVersion.value);
                 }
