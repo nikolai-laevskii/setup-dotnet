@@ -316,14 +316,14 @@ class InstallDir {
     constructor(version) {
         const majorVersion = version.split('.').at(0);
         if (utils_1.IS_WINDOWS) {
-            process.env['DOTNET_INSTALL_DIR'] = `${InstallDir.base.windows}${majorVersion}`;
+            process.env['DOTNET_INSTALL_DIR'] = `${InstallDir.base.windows}\\${majorVersion}`;
             return;
         }
         if (utils_1.IS_LINUX) {
-            process.env['DOTNET_INSTALL_DIR'] = `${InstallDir.base.linux}${majorVersion}`;
+            process.env['DOTNET_INSTALL_DIR'] = `${InstallDir.base.linux}/${majorVersion}`;
             return;
         }
-        process.env['DOTNET_INSTALL_DIR'] = `${InstallDir.base.mac}${majorVersion}`;
+        process.env['DOTNET_INSTALL_DIR'] = `${InstallDir.base.mac}/${majorVersion}`;
     }
     get path() {
         if (process.env['DOTNET_INSTALL_DIR']) {
