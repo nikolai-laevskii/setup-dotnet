@@ -347,4 +347,4 @@ jobs:
           dotnet-version: 7.0.203
       - name: Verify dotnet 7.0.203
         shell: pwsh
-        run: __tests__/verify-dotnet.ps1 -Patterns "^7.0.203$"
+        run: __tests__/verify-dotnet.ps1 -Patterns "^2.2.402$", "^7.0.203$"
