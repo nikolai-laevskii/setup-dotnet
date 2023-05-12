@@ -116,20 +116,22 @@ class InstallDir {
     linux: '/usr/share/dotnet'
   };
 
-  constructor(version = 'unspecified-version') {
+  constructor(version: string) {
+    const majorVersion = version.split('.').at(0);
+
     if (IS_WINDOWS) {
       process.env[
         'DOTNET_INSTALL_DIR'
-      ] = `${InstallDir.base.windows}\\${version}`;
+      ] = `${InstallDir.base.windows}\\${majorVersion}`;
       return;
     }
 
     if (IS_LINUX) {
-      process.env['DOTNET_INSTALL_DIR'] = `${InstallDir.base.linux}/${version}`;
+      process.env['DOTNET_INSTALL_DIR'] = `${InstallDir.base.linux}/${majorVersion}`;
       return;
     }
 
-    process.env['DOTNET_INSTALL_DIR'] = `${InstallDir.base.mac}/${version}`;
+    process.env['DOTNET_INSTALL_DIR'] = `${InstallDir.base.mac}/${majorVersion}`;
     return;
   }
 
@@ -195,7 +197,7 @@ export class DotnetCoreInstaller {
     const dotnetVersion = await versionResolver.createDotNetVersion();
 
     if (IS_WINDOWS) {
-      scriptArguments = ['&', `'${escapedScript}'`];
+      scriptArguments = ['&', '-SkipNonVersionedFiles', `'${escapedScript}'`];
 
       if (dotnetVersion.type) {
         scriptArguments.push(dotnetVersion.type, dotnetVersion.value);
@@ -219,7 +221,7 @@ export class DotnetCoreInstaller {
     } else {
       chmodSync(escapedScript, '777');
       scriptPath = await io.which(escapedScript, true);
-      scriptArguments = [];
+      scriptArguments = ['--skip-non-versioned-files'];
 
       if (dotnetVersion.type) {
         scriptArguments.push(dotnetVersion.type, dotnetVersion.value);
