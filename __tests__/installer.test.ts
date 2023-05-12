@@ -21,6 +21,9 @@ if (IS_WINDOWS) {
 }
 const tempDir = path.join(__dirname, 'runner', 'temp');
 
+const getVersionedToolDir = (majorVersion: string) =>
+  path.join(toolDir + '', `${majorVersion}.x`);
+
 process.env['RUNNER_TOOL_CACHE'] = toolDir;
 process.env['RUNNER_TEMP'] = tempDir;
 
@@ -59,52 +62,70 @@ describe('DotnetCoreInstaller tests', () => {
     for (const version of versions) {
       await getDotnet(version);
     }
-    expect(fs.existsSync(path.join(toolDir, 'sdk', '2.2.207'))).toBe(true);
-    expect(fs.existsSync(path.join(toolDir, 'sdk', '3.1.120'))).toBe(true);
+    expect(
+      fs.existsSync(path.join(getVersionedToolDir('2'), 'sdk', '2.2.207'))
+    ).toBe(true);
+    expect(
+      fs.existsSync(path.join(getVersionedToolDir('3'), 'sdk', '3.1.120'))
+    ).toBe(true);
 
     if (IS_WINDOWS) {
-      expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
+      expect(
+        fs.existsSync(path.join(getVersionedToolDir('3'), 'dotnet.exe'))
+      ).toBe(true);
     } else {
-      expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
+      expect(fs.existsSync(path.join(getVersionedToolDir('3'), 'dotnet'))).toBe(
+        true
+      );
     }
 
     expect(process.env.DOTNET_ROOT).toBeDefined();
     expect(process.env.PATH).toBeDefined();
-    expect(process.env.DOTNET_ROOT).toBe(toolDir);
-    expect(process.env.PATH?.startsWith(toolDir)).toBe(true);
+    expect(process.env.DOTNET_ROOT).toBe(getVersionedToolDir('3'));
+    expect(process.env.PATH?.startsWith(getVersionedToolDir('3'))).toBe(true);
   }, 600000);
 
   it('Acquires version of dotnet if no matching version is installed', async () => {
     await getDotnet('3.1.201');
-    expect(fs.existsSync(path.join(toolDir, 'sdk', '3.1.201'))).toBe(true);
+    expect(
+      fs.existsSync(path.join(getVersionedToolDir('3'), 'sdk', '3.1.201'))
+    ).toBe(true);
     if (IS_WINDOWS) {
-      expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
+      expect(
+        fs.existsSync(path.join(getVersionedToolDir('3'), 'dotnet.exe'))
+      ).toBe(true);
     } else {
-      expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
+      expect(fs.existsSync(path.join(getVersionedToolDir('3'), 'dotnet'))).toBe(
+        true
+      );
     }
 
     expect(process.env.DOTNET_ROOT).toBeDefined();
     expect(process.env.PATH).toBeDefined();
-    expect(process.env.DOTNET_ROOT).toBe(toolDir);
-    expect(process.env.PATH?.startsWith(toolDir)).toBe(true);
+    expect(process.env.DOTNET_ROOT).toBe(getVersionedToolDir('3'));
+    expect(process.env.PATH?.startsWith(getVersionedToolDir('3'))).toBe(true);
   }, 600000); //This needs some time to download on "slower" internet connections
 
   it('Acquires generic version of dotnet if no matching version is installed', async () => {
     await getDotnet('3.1');
     const directory = fs
-      .readdirSync(path.join(toolDir, 'sdk'))
+      .readdirSync(path.join(getVersionedToolDir('3'), 'sdk'))
       .filter(fn => fn.startsWith('3.1.'));
     expect(directory.length > 0).toBe(true);
     if (IS_WINDOWS) {
-      expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
+      expect(
+        fs.existsSync(path.join(getVersionedToolDir('3'), 'dotnet.exe'))
+      ).toBe(true);
     } else {
-      expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
+      expect(fs.existsSync(path.join(getVersionedToolDir('3'), 'dotnet'))).toBe(
+        true
+      );
     }
 
     expect(process.env.DOTNET_ROOT).toBeDefined();
     expect(process.env.PATH).toBeDefined();
-    expect(process.env.DOTNET_ROOT).toBe(toolDir);
-    expect(process.env.PATH?.startsWith(toolDir)).toBe(true);
+    expect(process.env.DOTNET_ROOT).toBe(getVersionedToolDir('3'));
+    expect(process.env.PATH?.startsWith(getVersionedToolDir('3'))).toBe(true);
   }, 600000); //This needs some time to download on "slower" internet connections
 
   it('Returns string with installed SDK version', async () => {
@@ -293,6 +314,6 @@ async function getDotnet(version: string, quality = ''): Promise<string> {
     quality as QualityOptions
   );
   const installedVersion = await dotnetInstaller.installDotnet();
-  installer.DotnetCoreInstaller.addToPath();
+  dotnetInstaller.addToPath();
   return installedVersion;
 }

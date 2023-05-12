@@ -66,10 +66,10 @@ export async function run() {
       const uniqueVersions = new Set<string>(versions);
       for (const version of uniqueVersions) {
         dotnetInstaller = new DotnetCoreInstaller(version, quality);
+        dotnetInstaller.addToPath();
         const installedVersion = await dotnetInstaller.installDotnet();
         installedDotnetVersions.push(installedVersion);
       }
-      DotnetCoreInstaller.addToPath();
     }
 
     const sourceUrl: string = core.getInput('source-url');

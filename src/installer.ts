@@ -6,7 +6,6 @@ import * as hc from '@actions/http-client';
 import {chmodSync} from 'fs';
 import {readdir} from 'fs/promises';
 import path from 'path';
-import os from 'os';
 import semver from 'semver';
 import {IS_LINUX, IS_WINDOWS} from './utils';
 import {QualityOptions} from './setup-dotnet';
@@ -110,56 +109,53 @@ export class DotnetVersionResolver {
     'https://dotnetcli.azureedge.net/dotnet/release-metadata/releases-index.json';
 }
 
+class InstallDir {
+  static base = IS_WINDOWS
+    ? path.join(process.env['PROGRAMFILES'] + '', 'dotnet')
+    : IS_LINUX
+    ? '/usr/share/dotnet'
+    : path.join(process.env['HOME'] + '', '.dotnet');
+
+  constructor(private version: string) {
+    /**
+     * Separation by major versions is required to ensure compatibility
+     * with non-versioned files such as dotnet.exe which are not overwritten
+     * during the installation
+     */
+    const majorVersion = `${(this.version.match(/^\d+\./) || ['x.'])[0]}x`;
+    process.env['DOTNET_INSTALL_DIR'] = path.join(
+      InstallDir.base + '',
+      majorVersion
+    );
+  }
+
+  public get path() {
+    if (process.env['DOTNET_INSTALL_DIR']) {
+      return process.env['DOTNET_INSTALL_DIR'];
+    }
+
+    return InstallDir.base;
+  }
+
+  public addToPath() {
+    core.addPath(this.path);
+    core.exportVariable('DOTNET_ROOT', this.path);
+  }
+}
+
 export class DotnetCoreInstaller {
-  private version: string;
-  private quality: QualityOptions;
+  private installDir: InstallDir;
 
-  static {
-    const installationDirectoryWindows = path.join(
-      process.env['PROGRAMFILES'] + '',
-      'dotnet'
-    );
-    const installationDirectoryLinux = '/usr/share/dotnet';
-    const installationDirectoryMac = path.join(
-      process.env['HOME'] + '',
-      '.dotnet'
-    );
-    const dotnetInstallDir: string | undefined =
-      process.env['DOTNET_INSTALL_DIR'];
-    if (dotnetInstallDir) {
-      process.env['DOTNET_INSTALL_DIR'] =
-        this.convertInstallPathToAbsolute(dotnetInstallDir);
-    } else {
-      if (IS_WINDOWS) {
-        process.env['DOTNET_INSTALL_DIR'] = installationDirectoryWindows;
-      } else {
-        process.env['DOTNET_INSTALL_DIR'] = IS_LINUX
-          ? installationDirectoryLinux
-          : installationDirectoryMac;
-      }
-    }
+  constructor(
+    private version: string,
+    private quality: QualityOptions,
+    installDir = new InstallDir(version)
+  ) {
+    this.installDir = installDir;
   }
 
-  constructor(version: string, quality: QualityOptions) {
-    this.version = version;
-    this.quality = quality;
-  }
-
-  private static convertInstallPathToAbsolute(installDir: string): string {
-    let transformedPath;
-    if (path.isAbsolute(installDir)) {
-      transformedPath = installDir;
-    } else {
-      transformedPath = installDir.startsWith('~')
-        ? path.join(os.homedir(), installDir.slice(1))
-        : (transformedPath = path.join(process.cwd(), installDir));
-    }
-    return path.normalize(transformedPath);
-  }
-
-  static addToPath() {
-    core.addPath(process.env['DOTNET_INSTALL_DIR']!);
-    core.exportVariable('DOTNET_ROOT', process.env['DOTNET_INSTALL_DIR']);
+  public addToPath() {
+    this.installDir.addToPath();
   }
 
   private setQuality(
@@ -197,7 +193,7 @@ export class DotnetCoreInstaller {
     const dotnetVersion = await versionResolver.createDotNetVersion();
 
     if (IS_WINDOWS) {
-      scriptArguments = ['&', `'${escapedScript}'`];
+      scriptArguments = ['&', `'${escapedScript}'`, '-SkipNonVersionedFiles'];
 
       if (dotnetVersion.type) {
         scriptArguments.push(dotnetVersion.type, dotnetVersion.value);
@@ -221,7 +217,7 @@ export class DotnetCoreInstaller {
     } else {
       chmodSync(escapedScript, '777');
       scriptPath = await io.which(escapedScript, true);
-      scriptArguments = [];
+      scriptArguments = ['--skip-non-versioned-files'];
 
       if (dotnetVersion.type) {
         scriptArguments.push(dotnetVersion.type, dotnetVersion.value);
@@ -251,9 +247,8 @@ export class DotnetCoreInstaller {
   }
 
   private async outputDotnetVersion(version): Promise<string> {
-    const installationPath = process.env['DOTNET_INSTALL_DIR']!;
     const versionsOnRunner: string[] = await readdir(
-      path.join(installationPath.replace(/'/g, ''), 'sdk')
+      path.join(this.installDir.path.replace(/'/g, ''), 'sdk')
     );
 
     const installedVersion = semver.maxSatisfying(versionsOnRunner, version, {

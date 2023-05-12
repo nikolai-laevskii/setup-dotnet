@@ -18,6 +18,9 @@ if (IS_WINDOWS) {
   toolDir = path.join(process.env['HOME'] + '', '.dotnet');
 }
 
+const getVersionedToolDir = (majorVersion: string) =>
+  path.join(toolDir + '', `${majorVersion}.x`);
+
 function createGlobalJsonPath(dotnetVersion: string) {
   const globalJsonPath = path.join(process.cwd(), 'global.json');
   const jsonContents = `{${os.EOL}"sdk": {${os.EOL}"version": "${dotnetVersion}"${os.EOL}}${os.EOL}}`;
@@ -64,11 +67,17 @@ describe('setup-dotnet tests', () => {
     createGlobalJsonPath('3.1.201');
     await setup.run();
 
-    expect(fs.existsSync(path.join(toolDir, 'sdk', '3.1.201'))).toBe(true);
+    expect(
+      fs.existsSync(path.join(getVersionedToolDir('3'), 'sdk', '3.1.201'))
+    ).toBe(true);
     if (IS_WINDOWS) {
-      expect(fs.existsSync(path.join(toolDir, 'dotnet.exe'))).toBe(true);
+      expect(
+        fs.existsSync(path.join(getVersionedToolDir('3'), 'dotnet.exe'))
+      ).toBe(true);
     } else {
-      expect(fs.existsSync(path.join(toolDir, 'dotnet'))).toBe(true);
+      expect(fs.existsSync(path.join(getVersionedToolDir('3'), 'dotnet'))).toBe(
+        true
+      );
     }
   }, 400000);
 
