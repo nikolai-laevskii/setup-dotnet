@@ -348,5 +348,3 @@ jobs:
       - name: Verify dotnet 7.0.203
         shell: pwsh
         run: __tests__/verify-dotnet.ps1 -Patterns "^7.0.203$"
-
-
