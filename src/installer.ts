@@ -127,11 +127,15 @@ class InstallDir {
     }
 
     if (IS_LINUX) {
-      process.env['DOTNET_INSTALL_DIR'] = `${InstallDir.base.linux}/${majorVersion}`;
+      process.env[
+        'DOTNET_INSTALL_DIR'
+      ] = `${InstallDir.base.linux}/${majorVersion}`;
       return;
     }
 
-    process.env['DOTNET_INSTALL_DIR'] = `${InstallDir.base.mac}/${majorVersion}`;
+    process.env[
+      'DOTNET_INSTALL_DIR'
+    ] = `${InstallDir.base.mac}/${majorVersion}`;
     return;
   }
 
