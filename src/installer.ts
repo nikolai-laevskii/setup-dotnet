@@ -110,59 +110,52 @@ export class DotnetVersionResolver {
 }
 
 class InstallDir {
-  static base = {
-    windows: path.join(process.env['PROGRAMFILES'] + '', 'dotnet'),
-    mac: path.join(process.env['HOME'] + '', '.dotnet'),
-    linux: '/usr/share/dotnet'
-  };
+  static base = IS_WINDOWS
+    ? path.join(process.env['PROGRAMFILES'] + '', 'dotnet')
+    : IS_LINUX
+    ? '/usr/share/dotnet'
+    : path.join(process.env['HOME'] + '', '.dotnet');
 
-  constructor(version: string) {
-    const majorVersion = version.split('.').at(0);
-
-    if (IS_WINDOWS) {
-      process.env[
-        'DOTNET_INSTALL_DIR'
-      ] = `${InstallDir.base.windows}\\${majorVersion}`;
-      return;
-    }
-
-    if (IS_LINUX) {
-      process.env[
-        'DOTNET_INSTALL_DIR'
-      ] = `${InstallDir.base.linux}/${majorVersion}`;
-      return;
-    }
-
-    process.env[
-      'DOTNET_INSTALL_DIR'
-    ] = `${InstallDir.base.mac}/${majorVersion}`;
+  constructor(private version: string) {
+    /**
+     * Separation by major versions is required to ensure compatibility
+     * with non-versioned files such as dotnet.exe which are not overwritten
+     * during the installation
+     */
+    const majorVersion = `${(this.version.match(/^\d+\./) || ['x.'])[0]}x`;
+    process.env['DOTNET_INSTALL_DIR'] = path.join(
+      InstallDir.base + '',
+      majorVersion
+    );
   }
 
-  get path() {
+  public get path() {
     if (process.env['DOTNET_INSTALL_DIR']) {
       return process.env['DOTNET_INSTALL_DIR'];
     }
 
-    if (IS_WINDOWS) return InstallDir.base.windows;
-    if (IS_LINUX) return InstallDir.base.linux;
-    return InstallDir.base.mac;
+    return InstallDir.base;
+  }
+
+  public addToPath() {
+    core.addPath(this.path);
+    core.exportVariable('DOTNET_ROOT', this.path);
   }
 }
 
 export class DotnetCoreInstaller {
-  private version: string;
-  private quality: QualityOptions;
   private installDir: InstallDir;
 
-  constructor(version: string, quality: QualityOptions) {
-    this.version = version;
-    this.quality = quality;
-    this.installDir = new InstallDir(version);
+  constructor(
+    private version: string,
+    private quality: QualityOptions,
+    installDir = new InstallDir(version)
+  ) {
+    this.installDir = installDir;
   }
 
   public addToPath() {
-    core.addPath(this.installDir.path);
-    core.exportVariable('DOTNET_ROOT', this.installDir.path);
+    this.installDir.addToPath();
   }
 
   private setQuality(

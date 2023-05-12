@@ -21,8 +21,8 @@ if (IS_WINDOWS) {
 }
 const tempDir = path.join(__dirname, 'runner', 'temp');
 
-const getVersionedToolDir = (version: string) =>
-  path.join(toolDir + '', version);
+const getVersionedToolDir = (majorVersion: string) =>
+  path.join(toolDir + '', `${majorVersion}.x`);
 
 process.env['RUNNER_TOOL_CACHE'] = toolDir;
 process.env['RUNNER_TEMP'] = tempDir;

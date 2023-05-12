@@ -18,8 +18,8 @@ if (IS_WINDOWS) {
   toolDir = path.join(process.env['HOME'] + '', '.dotnet');
 }
 
-const getVersionedToolDir = (version: string) =>
-  path.join(toolDir + '', version);
+const getVersionedToolDir = (majorVersion: string) =>
+  path.join(toolDir + '', `${majorVersion}.x`);
 
 function createGlobalJsonPath(dotnetVersion: string) {
   const globalJsonPath = path.join(process.cwd(), 'global.json');
